@@ -154,6 +154,12 @@
 				interrupt-controller;
 				#interrupt-cells = <2>;
 			};
+
+			an7589_pwm: pwm {
+				compatible = "airoha,an7589-pwm";
+
+				#pwm-cells = <3>;
+			};
 		};
 	};
 };

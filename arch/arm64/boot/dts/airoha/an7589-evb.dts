@@ -49,8 +49,34 @@
 			default-state = "on";
 		};
 	};
+
+	pwm-leds {
+		compatible = "pwm-leds";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pwm_gpio4_pins>;
+
+		led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			pwms = <&an7589_pwm 4 4000000 0>;
+			max-brightness = <255>;
+			active-low;
+		};
+	};
 };
 
 &an7589_pinctrl {
 	gpio-ranges = <&an7589_pinctrl 0 0 74>;
+
+	pwm_gpio4_pins: pwm-gpio4-pins {
+		mux {
+			function = "pwm";
+			groups = "gpio4";
+		};
+
+		conf {
+			pins = "gpio4";
+			output-enable;
+		};
+	};
 };
