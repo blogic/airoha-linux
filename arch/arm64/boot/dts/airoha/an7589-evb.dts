@@ -49,8 +49,34 @@
 		device_type = "memory";
 		reg = <0x0 0x80000000 0x0 0x80000000>;
 	};
+
+	pwm-leds {
+		compatible = "pwm-leds";
+		pinctrl-0 = <&pwm_gpio4_pins>;
+		pinctrl-names = "default";
+
+		led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_STATUS;
+			pwms = <&gpio_sysctl 4 4000000 0>;
+			max-brightness = <255>;
+			active-low;
+		};
+	};
 };
 
 &an7589_pinctrl {
 	gpio-ranges = <&an7589_pinctrl 0 0 74>;
+
+	pwm_gpio4_pins: pwm-gpio4-pins {
+		conf {
+			pins = "gpio4";
+			output-enable;
+		};
+
+		mux {
+			function = "pwm";
+			groups = "gpio4";
+		};
+	};
 };

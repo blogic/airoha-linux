@@ -127,10 +127,11 @@
 			clocks = <&clk1843200>;
 		};
 
-		system-controller@1fbf0200 {
+		gpio_sysctl: system-controller@1fbf0200 {
 			compatible = "airoha,an7589-gpio-sysctl", "syscon",
 				     "simple-mfd";
 			reg = <0x0 0x1fbf0200 0x0 0x100>;
+			#pwm-cells = <3>;
 
 			an7589_pinctrl: pinctrl {
 				compatible = "airoha,an7589-pinctrl";
