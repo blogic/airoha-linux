@@ -196,6 +196,38 @@
 			airoha,chip-scu = <&chip_scu>;
 			#clock-cells = <1>;
 			#reset-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			mdio0: mdio-bus@c8 {
+				compatible = "airoha,an7589-mdio", "airoha,an7583-mdio";
+				reg = <0xc8>;
+
+				clocks = <&scuclk AN7583_CLK_MDIO0>;
+				resets = <&scuclk AN7589_MDIO0_RST>;
+
+				status = "disabled";
+			};
+
+			mdio1: mdio-bus@cc {
+				compatible = "airoha,an7589-mdio", "airoha,an7583-mdio";
+				reg = <0xcc>;
+
+				clocks = <&scuclk AN7583_CLK_MDIO1>;
+				resets = <&scuclk AN7589_MDIO1_RST>;
+
+				status = "disabled";
+			};
+
+			mdio2: mdio-bus@d8 {
+				compatible = "airoha,an7589-mdio", "airoha,an7583-mdio";
+				reg = <0xd8>;
+
+				clocks = <&scuclk AN7589_CLK_MDIO2>;
+				resets = <&scuclk AN7589_MDIO2_RST>;
+
+				status = "disabled";
+			};
 		};
 
 		uart1: serial@1fbf0000 {
@@ -230,6 +262,13 @@
 					mux {
 						function = "i2c0";
 						groups = "i2c0";
+					};
+				};
+
+				mdio0_pins: mdio0-pins {
+					mux {
+						function = "mdio0";
+						groups = "mdio0";
 					};
 				};
 

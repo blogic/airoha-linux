@@ -87,6 +87,12 @@
 	status = "okay";
 };
 
+&mdio0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&mdio0_pins>;
+	status = "okay";
+};
+
 &snfi {
 	status = "okay";
 };
