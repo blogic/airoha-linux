@@ -29,6 +29,7 @@ properties:
       - items:
           - enum:
               - airoha,an7589-evb
+              - airoha,an7589-evb-emmc
           - const: airoha,an7589
 
 additionalProperties: true
