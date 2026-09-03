@@ -30,6 +30,9 @@ properties:
           - mediatek,mt8196-mmc
           - mediatek,mt8516-mmc
       - items:
+          - const: airoha,an7589-mmc
+          - const: mediatek,mt7986-mmc
+      - items:
           - const: mediatek,mt7623-mmc
           - const: mediatek,mt2701-mmc
       - items:
@@ -217,6 +220,22 @@ allOf:
       properties:
         compatible:
           contains:
+            const: airoha,an7589-mmc
+    then:
+      properties:
+        clocks:
+          items:
+            - description: source clock
+            - description: HCLK which used for host
+        clock-names:
+          items:
+            - const: source
+            - const: hclk
+
+  - if:
+      properties:
+        compatible:
+          contains:
             const: mediatek,mt2712-mmc
     then:
       properties:
@@ -261,6 +280,11 @@ allOf:
           contains:
             enum:
               - mediatek,mt7986-mmc
+      not:
+        properties:
+          compatible:
+            contains:
+              const: airoha,an7589-mmc
     then:
       properties:
         clocks:
