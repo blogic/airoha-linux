@@ -94,7 +94,8 @@ static const u32 irq_edge_regs[] = {
 	REG_GPIO_INT_EDGE3
 };
 
-static struct airoha_gpiochip_regs airoha_gpiochip_regs = {
+const struct airoha_gpiochip_regs airoha_gpiochip_regs_64 = {
+	.ngpio = AIROHA_NUM_PINS,
 	.data = gpio_data_regs,
 	.dir = gpio_dir_regs,
 	.out = gpio_out_regs,
@@ -102,6 +103,7 @@ static struct airoha_gpiochip_regs airoha_gpiochip_regs = {
 	.level = irq_level_regs,
 	.edge = irq_edge_regs,
 };
+EXPORT_SYMBOL_GPL(airoha_gpiochip_regs_64);
 
 static int airoha_convert_pin_to_reg_offset(struct pinctrl_dev *pctrl_dev,
 					    struct pinctrl_gpio_range *range,
@@ -207,7 +209,7 @@ static void airoha_irq_unmask(struct irq_data *data)
 {
 	struct gpio_chip *gc = irq_data_get_irq_chip_data(data);
 	struct airoha_pinctrl *pinctrl = gpiochip_get_data(gc);
-	struct airoha_gpiochip_regs *gpio_regs = pinctrl->gpio_regs;
+	const struct airoha_gpiochip_regs *gpio_regs = pinctrl->gpio_regs;
 	u8 offset = data->hwirq % AIROHA_REG_GPIOCTRL_NUM_PIN;
 	u8 index = data->hwirq / AIROHA_REG_GPIOCTRL_NUM_PIN;
 	u32 mask = GENMASK(2 * offset + 1, 2 * offset);
@@ -244,7 +246,7 @@ static void airoha_irq_mask(struct irq_data *data)
 {
 	struct gpio_chip *gc = irq_data_get_irq_chip_data(data);
 	struct airoha_pinctrl *pinctrl = gpiochip_get_data(gc);
-	struct airoha_gpiochip_regs *gpio_regs = pinctrl->gpio_regs;
+	const struct airoha_gpiochip_regs *gpio_regs = pinctrl->gpio_regs;
 	u8 offset = data->hwirq % AIROHA_REG_GPIOCTRL_NUM_PIN;
 	u8 index = data->hwirq / AIROHA_REG_GPIOCTRL_NUM_PIN;
 	u32 mask = GENMASK(2 * offset + 1, 2 * offset);
@@ -261,7 +263,7 @@ static void airoha_irq_ack(struct irq_data *data)
 {
 	struct gpio_chip *gc = irq_data_get_irq_chip_data(data);
 	struct airoha_pinctrl *pinctrl = gpiochip_get_data(gc);
-	struct airoha_gpiochip_regs *gpio_regs = pinctrl->gpio_regs;
+	const struct airoha_gpiochip_regs *gpio_regs = pinctrl->gpio_regs;
 	u8 offset = data->hwirq % AIROHA_PIN_BANK_SIZE;
 	u8 index = data->hwirq / AIROHA_PIN_BANK_SIZE;
 
@@ -379,7 +381,7 @@ static int airoha_pinctrl_add_gpiochip(struct airoha_pinctrl *pinctrl,
 	gc->set = airoha_gpio_set;
 	gc->get = airoha_gpio_get;
 	gc->base = -1;
-	gc->ngpio = AIROHA_NUM_PINS;
+	gc->ngpio = pinctrl->gpio_regs->ngpio;
 
 	girq->default_type = IRQ_TYPE_NONE;
 	girq->handler = handle_bad_irq;
@@ -831,7 +833,7 @@ int airoha_pinctrl_probe(struct platform_device *pdev)
 	pinctrl->desc.pins = data->pins;
 	pinctrl->desc.npins = data->num_pins;
 
-	pinctrl->gpio_regs = &airoha_gpiochip_regs;
+	pinctrl->gpio_regs = data->gpio_regs;
 
 	err = devm_pinctrl_register_and_init(dev, &pinctrl->desc,
 					     pinctrl, &pinctrl->ctrl);

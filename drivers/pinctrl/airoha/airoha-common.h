@@ -89,6 +89,7 @@ struct airoha_pinctrl_conf {
 };
 
 struct airoha_gpiochip_regs {
+	unsigned int ngpio;
 	/* gpio */
 	const u32 *data;
 	const u32 *dir;
@@ -98,6 +99,8 @@ struct airoha_gpiochip_regs {
 	const u32 *level;
 	const u32 *edge;
 };
+
+extern const struct airoha_gpiochip_regs airoha_gpiochip_regs_64;
 
 struct airoha_pinctrl_confs_info {
 	const struct airoha_pinctrl_conf *confs;
@@ -126,7 +129,7 @@ struct airoha_pinctrl {
 	struct regmap *regmap;
 
 	struct gpio_chip gpiochip;
-	struct airoha_gpiochip_regs *gpio_regs;
+	const struct airoha_gpiochip_regs *gpio_regs;
 	unsigned int num_irq_pins;
 };
 
@@ -134,6 +137,7 @@ struct airoha_pinctrl_match_data {
 	const char *chip_scu_compatible;
 	const char *pinctrl_name;
 	struct module *pinctrl_owner;
+	const struct airoha_gpiochip_regs *gpio_regs;
 	const struct pinctrl_pin_desc *pins;
 	const unsigned int num_pins;
 	const struct pingroup *grps;
