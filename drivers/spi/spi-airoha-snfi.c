@@ -132,6 +132,8 @@
 #define REG_SPI_NFI_STA				0x0060
 #define REG_SPI_NFI_FIFOSTA			0x0064
 #define REG_SPI_NFI_STRADDR			0x0080
+#define REG_SPI_NFI_STRADDR_2			0x0088
+#define SPI_NFI_STRADDR_2_ADDR_HI		GENMASK(3, 0)
 #define REG_SPI_NFI_FDM0L			0x00a0
 #define REG_SPI_NFI_FDM0M			0x00a4
 #define REG_SPI_NFI_FDM7L			0x00d8
@@ -223,7 +225,23 @@ struct airoha_snand_ctrl {
 	struct regmap *regmap_ctrl;
 	struct regmap *regmap_nfi;
 	struct clk *spi_clk;
+	u8 dma_addr_bits;
 };
+
+static int airoha_snand_set_dma_addr(struct airoha_snand_ctrl *as_ctrl,
+				     dma_addr_t dma_addr)
+{
+	int err;
+
+	err = regmap_write(as_ctrl->regmap_nfi, REG_SPI_NFI_STRADDR,
+			   lower_32_bits(dma_addr));
+	if (err || as_ctrl->dma_addr_bits <= 32)
+		return err;
+
+	return regmap_write(as_ctrl->regmap_nfi, REG_SPI_NFI_STRADDR_2,
+			    FIELD_PREP(SPI_NFI_STRADDR_2_ADDR_HI,
+				       upper_32_bits(dma_addr)));
+}
 
 static int airoha_snand_set_fifo_op(struct airoha_snand_ctrl *as_ctrl,
 				    u8 op_cmd, int op_len)
@@ -647,9 +665,7 @@ static ssize_t airoha_snand_dirmap_read(struct spi_mem_dirmap_desc *desc,
 	if (err)
 		goto error_dma_mode_off;
 
-	/* set dma addr */
-	err = regmap_write(as_ctrl->regmap_nfi, REG_SPI_NFI_STRADDR,
-			   dma_addr);
+	err = airoha_snand_set_dma_addr(as_ctrl, dma_addr);
 	if (err)
 		goto error_dma_unmap;
 
@@ -836,9 +852,7 @@ static ssize_t airoha_snand_dirmap_write(struct spi_mem_dirmap_desc *desc,
 	if (err)
 		goto error_dma_mode_off;
 
-	/* set dma addr */
-	err = regmap_write(as_ctrl->regmap_nfi, REG_SPI_NFI_STRADDR,
-			   dma_addr);
+	err = airoha_snand_set_dma_addr(as_ctrl, dma_addr);
 	if (err)
 		goto error_dma_unmap;
 
@@ -1114,7 +1128,11 @@ static int airoha_snand_probe(struct platform_device *pdev)
 		}
 	}
 
-	err = dma_set_mask(as_ctrl->dev, DMA_BIT_MASK(32));
+	as_ctrl->dma_addr_bits = 32;
+	if (device_is_compatible(dev, "airoha,an7589-snand"))
+		as_ctrl->dma_addr_bits = 36;
+
+	err = dma_set_mask(as_ctrl->dev, DMA_BIT_MASK(as_ctrl->dma_addr_bits));
 	if (err)
 		return err;
 
