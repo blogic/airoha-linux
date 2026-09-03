@@ -1,0 +1,37 @@
+// SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
+
+#include "an7589-evb.dts"
+
+/ {
+	model = "Airoha AN7589 Evaluation Board (eMMC)";
+	compatible = "airoha,an7589-evb-emmc", "airoha,an7589";
+
+	vmmc_3v3: regulator-vmmc-3v3 {
+		compatible = "regulator-fixed";
+		regulator-name = "vmmc";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		regulator-always-on;
+	};
+
+	vqmmc_1v8: regulator-vqmmc-1v8 {
+		compatible = "regulator-fixed";
+		regulator-name = "vqmmc";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		regulator-always-on;
+	};
+};
+
+&snfi {
+	status = "disabled";
+};
+
+&mmc0 {
+	pinctrl-names = "default", "state_uhs";
+	pinctrl-0 = <&mmc_pins>;
+	pinctrl-1 = <&mmc_pins>;
+	vmmc-supply = <&vmmc_3v3>;
+	vqmmc-supply = <&vqmmc_1v8>;
+	status = "okay";
+};
