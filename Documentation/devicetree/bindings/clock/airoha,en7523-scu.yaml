@@ -65,6 +65,18 @@ properties:
       for configuring and read the base clock sources, dividers  and
       clock gates.
 
+  '#address-cells':
+    const: 1
+
+  '#size-cells':
+    const: 0
+
+patternProperties:
+  '^mdio-bus@[0-9a-f]+$':
+    type: object
+    $ref: /schemas/net/airoha,an7583-mdio.yaml#
+    description: MDIO controller living in the SCU register space.
+
 required:
   - compatible
   - reg
