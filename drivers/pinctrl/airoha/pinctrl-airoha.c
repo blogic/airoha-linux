@@ -401,6 +401,35 @@ static int airoha_pinctrl_add_gpiochip(struct airoha_pinctrl *pinctrl,
 }
 
 /* pinmux callbacks */
+static int airoha_pinmux_set_pin_mode(struct airoha_pinctrl *pinctrl,
+				      unsigned int pin, u8 mode)
+{
+	unsigned int mode_bits = pinctrl->iomux_info->mode_bits;
+	unsigned int modes_per_reg = sizeof(u32) * BITS_PER_BYTE / mode_bits;
+	unsigned int shift = (pin % modes_per_reg) * mode_bits;
+	unsigned int reg = (pin / modes_per_reg) * sizeof(u32);
+
+	return regmap_update_bits(pinctrl->iomux, reg,
+				  GENMASK(mode_bits - 1, 0) << shift,
+				  mode << shift);
+}
+
+static int airoha_pinmux_set_pin_modes(struct airoha_pinctrl *pinctrl,
+				       const struct group_desc *grp,
+				       const u8 *modes)
+{
+	int i, err;
+
+	for (i = 0; i < grp->grp.npins; i++) {
+		err = airoha_pinmux_set_pin_mode(pinctrl, grp->grp.pins[i],
+						 modes[i]);
+		if (err)
+			return err;
+	}
+
+	return 0;
+}
+
 static int airoha_pinmux_set_mux(struct pinctrl_dev *pctrl_dev,
 				 unsigned int selector,
 				 unsigned int group)
@@ -430,6 +459,15 @@ static int airoha_pinmux_set_mux(struct pinctrl_dev *pctrl_dev,
 		group = &func->groups[i];
 		if (strcmp(group->name, grp->grp.name))
 			continue;
+
+		if (group->pin_modes) {
+			int err;
+
+			err = airoha_pinmux_set_pin_modes(pinctrl, grp,
+							  group->pin_modes);
+			if (err)
+				return err;
+		}
 
 		for (j = 0; j < group->regmap_size; j++) {
 			switch (group->regmap[j].mux) {
@@ -823,6 +861,16 @@ int airoha_pinctrl_probe(struct platform_device *pdev)
 	}
 
 	pinctrl->chip_scu = map;
+
+	if (data->iomux_info) {
+		map = syscon_regmap_lookup_by_phandle(dev->of_node,
+						      "airoha,iomux");
+		if (IS_ERR(map))
+			return PTR_ERR(map);
+
+		pinctrl->iomux = map;
+		pinctrl->iomux_info = data->iomux_info;
+	}
 
 	/* Init pinctrl desc struct */
 	pinctrl->desc.name = data->pinctrl_name;
