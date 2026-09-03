@@ -23,6 +23,7 @@
 #include <linux/mfd/syscon.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
+#include <linux/property.h>
 #include <linux/pwm.h>
 #include <linux/regmap.h>
 #include <linux/types.h>
@@ -53,6 +54,7 @@
 #define AIROHA_PWM_REG_GPIO_FLASH_MAP_SHIFT(_n) (4 * (_n))
 #define AIROHA_PWM_GPIO_FLASH_EN		BIT(3)
 #define AIROHA_PWM_GPIO_FLASH_SET_ID		GENMASK(2, 0)
+#define AIROHA_PWM_GPIO_FLASH_SET_ID_WIDE	GENMASK(3, 0)
 
 /* Register map is equal to GPIO flash map */
 #define AIROHA_PWM_REG_SIPO_FLASH_MAP(_n)	(0x0054 + (4 * (_n)))
@@ -60,6 +62,8 @@
 #define AIROHA_PWM_REG_CYCLE_CFG_VALUE(_n)	(0x0098 + (4 * (_n)))
 #define AIROHA_PWM_REG_CYCLE_CFG_SHIFT(_n)	(8 * (_n))
 #define AIROHA_PWM_WAVE_GEN_CYCLE		GENMASK(7, 0)
+
+#define AIROHA_PWM_REG_GPIO_FLASH_EN		0x00e0
 
 /* GPIO/SIPO flash map handles 8 pins in one register */
 #define AIROHA_PWM_PINS_PER_FLASH_MAP		8
@@ -79,6 +83,12 @@
 #define AIROHA_PWM_NUM_SIPO			17
 #define AIROHA_PWM_MAX_CHANNELS			(AIROHA_PWM_NUM_GPIO + AIROHA_PWM_NUM_SIPO)
 
+struct airoha_pwm_soc_data {
+	u32 flash_set_id_mask;
+	u32 flash_en_mask;
+	u32 flash_en_reg;
+};
+
 struct airoha_pwm_bucket {
 	/* Concurrent access protected by PWM core */
 	int used;
@@ -88,6 +98,7 @@ struct airoha_pwm_bucket {
 
 struct airoha_pwm {
 	struct regmap *regmap;
+	const struct airoha_pwm_soc_data *soc;
 
 	DECLARE_BITMAP(initialized, AIROHA_PWM_MAX_CHANNELS);
 
@@ -417,9 +428,62 @@ static int airoha_pwm_sipo_init(struct airoha_pwm *pc)
 			       AIROHA_PWM_SERIAL_GPIO_FLASH_MODE);
 }
 
+static int airoha_pwm_flash_en_reg_get(struct airoha_pwm *pc,
+				       unsigned int hwpwm, u32 shift,
+				       u32 *addr, u32 *mask)
+{
+	const struct airoha_pwm_soc_data *soc = pc->soc;
+
+	if (!soc->flash_en_reg) {
+		*mask = soc->flash_en_mask << shift;
+		return 0;
+	}
+
+	if (hwpwm >= BITS_PER_TYPE(u32))
+		return -EINVAL;
+
+	*addr = soc->flash_en_reg;
+	*mask = BIT(hwpwm);
+
+	return 0;
+}
+
+static int airoha_pwm_flash_enable(struct airoha_pwm *pc, unsigned int hwpwm,
+				   u32 addr, u32 shift, bool enable)
+{
+	u32 mask;
+	int ret;
+
+	ret = airoha_pwm_flash_en_reg_get(pc, hwpwm, shift, &addr, &mask);
+	if (ret)
+		return ret;
+
+	return regmap_update_bits(pc->regmap, addr, mask, enable ? mask : 0);
+}
+
+static int airoha_pwm_flash_enabled(struct airoha_pwm *pc, unsigned int hwpwm,
+				    u32 addr, u32 shift, bool *enabled)
+{
+	u32 mask, val;
+	int ret;
+
+	ret = airoha_pwm_flash_en_reg_get(pc, hwpwm, shift, &addr, &mask);
+	if (ret)
+		return ret;
+
+	ret = regmap_read(pc->regmap, addr, &val);
+	if (ret)
+		return ret;
+
+	*enabled = !!(val & mask);
+
+	return 0;
+}
+
 static int airoha_pwm_config_flash_map(struct airoha_pwm *pc,
 				       unsigned int hwpwm, int index)
 {
+	u32 set_id_mask = pc->soc->flash_set_id_mask;
 	unsigned int addr;
 	u32 shift;
 	int ret;
@@ -432,17 +496,15 @@ static int airoha_pwm_config_flash_map(struct airoha_pwm *pc,
 		 * If we need to disable the PWM, we just put low the
 		 * GPIO. No need to setup buckets.
 		 */
-		return regmap_clear_bits(pc->regmap, addr,
-					 AIROHA_PWM_GPIO_FLASH_EN << shift);
+		return airoha_pwm_flash_enable(pc, hwpwm, addr, shift, false);
 	}
 
-	ret = regmap_update_bits(pc->regmap, addr,
-				 AIROHA_PWM_GPIO_FLASH_SET_ID << shift,
-				 FIELD_PREP(AIROHA_PWM_GPIO_FLASH_SET_ID, index) << shift);
+	ret = regmap_update_bits(pc->regmap, addr, set_id_mask << shift,
+				 field_prep(set_id_mask, index) << shift);
 	if (ret)
 		return ret;
 
-	return regmap_set_bits(pc->regmap, addr, AIROHA_PWM_GPIO_FLASH_EN << shift);
+	return airoha_pwm_flash_enable(pc, hwpwm, addr, shift, true);
 }
 
 static int airoha_pwm_config(struct airoha_pwm *pc, struct pwm_device *pwm,
@@ -552,17 +614,20 @@ static int airoha_pwm_get_state(struct pwm_chip *chip, struct pwm_device *pwm,
 
 	airoha_pwm_get_flash_map_addr_and_shift(hwpwm, &addr, &shift);
 
+	ret = airoha_pwm_flash_enabled(pc, hwpwm, addr, shift, &state->enabled);
+	if (ret)
+		return ret;
+
+	if (!state->enabled)
+		return 0;
+
 	ret = regmap_read(pc->regmap, addr, &val);
 	if (ret)
 		return ret;
 
-	state->enabled = FIELD_GET(AIROHA_PWM_GPIO_FLASH_EN, val >> shift);
-	if (!state->enabled)
-		return 0;
-
 	state->polarity = PWM_POLARITY_NORMAL;
 
-	bucket = FIELD_GET(AIROHA_PWM_GPIO_FLASH_SET_ID, val >> shift);
+	bucket = field_get(pc->soc->flash_set_id_mask, val >> shift);
 	return airoha_pwm_get_bucket(pc, bucket, &state->period,
 				     &state->duty_cycle);
 }
@@ -590,6 +655,10 @@ static int airoha_pwm_probe(struct platform_device *pdev)
 	if (IS_ERR(pc->regmap))
 		return dev_err_probe(dev, PTR_ERR(pc->regmap), "Failed to get PWM regmap\n");
 
+	pc->soc = device_get_match_data(dev);
+	if (!pc->soc)
+		return -EINVAL;
+
 	ret = devm_pwmchip_add(dev, chip);
 	if (ret)
 		return dev_err_probe(dev, ret, "Failed to add PWM chip\n");
@@ -597,8 +666,19 @@ static int airoha_pwm_probe(struct platform_device *pdev)
 	return 0;
 }
 
+static const struct airoha_pwm_soc_data en7581_pwm_soc_data = {
+	.flash_set_id_mask = AIROHA_PWM_GPIO_FLASH_SET_ID,
+	.flash_en_mask = AIROHA_PWM_GPIO_FLASH_EN,
+};
+
+static const struct airoha_pwm_soc_data an7589_pwm_soc_data = {
+	.flash_set_id_mask = AIROHA_PWM_GPIO_FLASH_SET_ID_WIDE,
+	.flash_en_reg = AIROHA_PWM_REG_GPIO_FLASH_EN,
+};
+
 static const struct of_device_id airoha_pwm_of_match[] = {
-	{ .compatible = "airoha,en7581-pwm" },
+	{ .compatible = "airoha,en7581-pwm", .data = &en7581_pwm_soc_data },
+	{ .compatible = "airoha,an7589-pwm", .data = &an7589_pwm_soc_data },
 	{ /* sentinel */ }
 };
 MODULE_DEVICE_TABLE(of, airoha_pwm_of_match);
@@ -617,5 +697,5 @@ MODULE_AUTHOR("Lorenzo Bianconi <lorenzo@kernel.org>");
 MODULE_AUTHOR("Markus Gothe <markus.gothe@genexis.eu>");
 MODULE_AUTHOR("Benjamin Larsson <benjamin.larsson@genexis.eu>");
 MODULE_AUTHOR("Christian Marangi <ansuelsmth@gmail.com>");
-MODULE_DESCRIPTION("Airoha EN7581 PWM driver");
+MODULE_DESCRIPTION("Airoha PWM driver");
 MODULE_LICENSE("GPL");
