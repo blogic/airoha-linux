@@ -49,6 +49,12 @@
 		.group_size = ARRAY_SIZE(table##_func_group),		\
 	}
 
+#define PINCTRL_MODE_FUNC_GROUP(id, table)				\
+	{								\
+		.name = id,						\
+		.pin_modes = table##_modes,				\
+	}
+
 #define PINCTRL_CONF_DESC(p, offset, mask)				\
 	{								\
 		.pin = p,						\
@@ -75,6 +81,7 @@ struct airoha_pinctrl_func_group {
 		u32 val;
 	} regmap[2];
 	int regmap_size;
+	const u8 *pin_modes;
 };
 
 struct airoha_pinctrl_func {
@@ -102,6 +109,10 @@ struct airoha_gpiochip_regs {
 
 extern const struct airoha_gpiochip_regs airoha_gpiochip_regs_64;
 
+struct airoha_pinctrl_iomux {
+	u8 mode_bits;
+};
+
 struct airoha_pinctrl_confs_info {
 	const struct airoha_pinctrl_conf *confs;
 	unsigned int num_confs;
@@ -126,6 +137,8 @@ struct airoha_pinctrl {
 	const struct airoha_pinctrl_confs_info *confs_info;
 
 	struct regmap *chip_scu;
+	struct regmap *iomux;
+	const struct airoha_pinctrl_iomux *iomux_info;
 	struct regmap *regmap;
 
 	struct gpio_chip gpiochip;
@@ -135,6 +148,7 @@ struct airoha_pinctrl {
 
 struct airoha_pinctrl_match_data {
 	const char *chip_scu_compatible;
+	const struct airoha_pinctrl_iomux *iomux_info;
 	const char *pinctrl_name;
 	struct module *pinctrl_owner;
 	const struct airoha_gpiochip_regs *gpio_regs;
