@@ -80,3 +80,10 @@
 		};
 	};
 };
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_pins>;
+	pinctrl-names = "default";
+
+	status = "okay";
+};

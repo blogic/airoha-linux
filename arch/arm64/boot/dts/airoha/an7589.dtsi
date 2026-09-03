@@ -16,6 +16,12 @@
 		clock-frequency = <1843200>;
 	};
 
+	clk200m: clock-200000000 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <200000000>;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -162,7 +168,44 @@
 				#interrupt-cells = <2>;
 
 				airoha,iomux = <&iomux>;
+
+				i2c0_pins: i2c0-pins {
+					mux {
+						function = "i2c";
+						groups = "i2c0";
+					};
+				};
 			};
+		};
+
+		i2c0: i2c@1fbf8000 {
+			compatible = "airoha,an7589-i2c", "mediatek,mt7621-i2c";
+			reg = <0x0 0x1fbf8000 0x0 0x100>;
+
+			resets = <&scuclk AN7589_I2C_MASTER_RST>;
+
+			clocks = <&clk200m>;
+			clock-frequency = <100000>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
+		i2c1: i2c@1fbf8100 {
+			compatible = "airoha,an7589-i2c", "mediatek,mt7621-i2c";
+			reg = <0x0 0x1fbf8100 0x0 0x100>;
+
+			resets = <&scuclk AN7589_I2C2_RST>;
+
+			clocks = <&clk200m>;
+			clock-frequency = <100000>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
 		};
 	};
 
