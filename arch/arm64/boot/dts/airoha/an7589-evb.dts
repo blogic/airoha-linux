@@ -86,3 +86,65 @@
 	pinctrl-0 = <&i2c0_pins>;
 	status = "okay";
 };
+
+&snfi {
+	status = "okay";
+};
+
+&spi_nand {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		bl2@0 {
+			label = "bl2";
+			reg = <0x00000000 0x00200000>;
+			read-only;
+		};
+
+		ubi@200000 {
+			compatible = "linux,ubi";
+			label = "ubi";
+			reg = <0x00200000 0x00000000>;
+
+			volumes {
+				ubi-volume-fip {
+					volname = "fip";
+				};
+
+				ubi-volume-ubootenv {
+					volname = "ubootenv";
+				};
+
+				ubi-volume-ubootenv2 {
+					volname = "ubootenv2";
+				};
+
+				ubi-volume-art {
+					volname = "art";
+				};
+
+				ubi-volume-kernel {
+					volname = "kernel";
+				};
+
+				ubi-volume-rootfs {
+					volname = "rootfs";
+				};
+
+				ubi-volume-kernel-alt {
+					volname = "kernel_alt";
+				};
+
+				ubi-volume-rootfs-alt {
+					volname = "rootfs_alt";
+				};
+
+				ubi-volume-rootfs-data {
+					volname = "rootfs_data";
+				};
+			};
+		};
+	};
+};
