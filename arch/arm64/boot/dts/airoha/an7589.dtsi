@@ -97,6 +97,12 @@
 		clock-frequency = <1843200>;
 	};
 
+	clk25m: clock-25000000 {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <25000000>;
+	};
+
 	clk200m: clock-200000000 {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
@@ -117,6 +123,27 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 		ranges;
+
+		mmc0: mmc@1fa0e000 {
+			compatible = "airoha,an7589-mmc";
+			reg = <0x0 0x1fa0e000 0x0 0x1000>,
+			      <0x0 0x1fa0c000 0x0 0x60>;
+			interrupts = <GIC_SPI 226 IRQ_TYPE_LEVEL_HIGH>;
+			clocks = <&scuclk EN7581_CLK_EMMC>, <&clk25m>;
+			clock-names = "source", "hclk";
+			resets = <&scuclk AN7589_EMMC_RST>;
+			reset-names = "hrst";
+			bus-width = <8>;
+			max-frequency = <200000000>;
+			cap-mmc-highspeed;
+			mmc-hs200-1_8v;
+			mmc-hs400-1_8v;
+			mmc-hs400-enhanced-strobe;
+			hs400-ds-delay = <0x14014>;
+			disable-wp;
+			non-removable;
+			status = "disabled";
+		};
 
 		gic: interrupt-controller@c000000 {
 			compatible = "arm,gic-v3";
@@ -203,6 +230,13 @@
 					mux {
 						function = "i2c0";
 						groups = "i2c0";
+					};
+				};
+
+				mmc_pins: mmc-pins {
+					mux {
+						function = "emmc";
+						groups = "emmc";
 					};
 				};
 			};
