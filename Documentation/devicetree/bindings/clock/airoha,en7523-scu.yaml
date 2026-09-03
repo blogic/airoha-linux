@@ -32,6 +32,7 @@ properties:
     items:
       - enum:
           - airoha,an7583-scu
+          - airoha,an7589-scu
           - airoha,en7523-scu
           - airoha,en7581-scu
           - econet,en751221-scu
@@ -73,7 +74,9 @@ allOf:
   - if:
       properties:
         compatible:
-          const: airoha,an7583-scu
+          enum:
+            - airoha,an7583-scu
+            - airoha,an7589-scu
 
     then:
       properties:
@@ -83,11 +86,18 @@ allOf:
       required:
         - airoha,chip-scu
         - '#reset-cells'
-        - '#phy-cells'
 
     else:
       properties:
         airoha,chip-scu: false
+
+  - if:
+      properties:
+        compatible:
+          const: airoha,an7583-scu
+    then:
+      required:
+        - '#phy-cells'
 
   - if:
       properties:
@@ -103,7 +113,9 @@ allOf:
   - if:
       properties:
         compatible:
-          const: econet,en751221-scu
+          enum:
+            - airoha,an7589-scu
+            - econet,en751221-scu
     then:
       properties:
         reg:
