@@ -18,6 +18,7 @@ properties:
       - const: airoha,en7581-snand
       - items:
           - enum:
+              - airoha,an7589-snand
               - airoha,en7523-snand
           - const: airoha,en7581-snand
 
