@@ -2,6 +2,8 @@
 
 #include <dt-bindings/interrupt-controller/irq.h>
 #include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/clock/en7523-clk.h>
+#include <dt-bindings/reset/airoha,an7589-reset.h>
 
 / {
 	interrupt-parent = <&gic>;
@@ -113,9 +115,22 @@
 			#interrupt-cells = <3>;
 		};
 
+		chip_scu: syscon@1fa20000 {
+			compatible = "airoha,an7589-chip-scu", "syscon";
+			reg = <0x0 0x1fa20000 0x0 0x410>;
+		};
+
 		iomux: syscon@1fa30000 {
 			compatible = "airoha,an7589-iomux", "syscon";
 			reg = <0x0 0x1fa30000 0x0 0x34>;
+		};
+
+		scuclk: clock-controller@1fb00000 {
+			compatible = "airoha,an7589-scu";
+			reg = <0x0 0x1fb00000 0x0 0x9fc>;
+			#clock-cells = <1>;
+			#reset-cells = <1>;
+			airoha,chip-scu = <&chip_scu>;
 		};
 
 		uart1: serial@1fbf0000 {
@@ -125,6 +140,7 @@
 			reg-shift = <2>;
 			interrupts = <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&clk1843200>;
+			resets = <&scuclk AN7589_UART_RST>;
 		};
 
 		gpio_sysctl: system-controller@1fbf0200 {
