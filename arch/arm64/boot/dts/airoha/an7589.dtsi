@@ -122,6 +122,11 @@
 			interrupts = <GIC_PPI 9 IRQ_TYPE_LEVEL_LOW>;
 		};
 
+		iomux: syscon@1fa30000 {
+			compatible = "airoha,an7589-iomux", "syscon";
+			reg = <0x0 0x1fa30000 0x0 0x34>;
+		};
+
 		uart1: serial@1fbf0000 {
 			compatible = "ns16550";
 			reg = <0x0 0x1fbf0000 0x0 0x30>;
@@ -129,6 +134,26 @@
 			reg-shift = <2>;
 			interrupts = <GIC_SPI 74 IRQ_TYPE_LEVEL_HIGH>;
 			clocks = <&clk1843200>;
+		};
+
+		system-controller@1fbf0200 {
+			compatible = "airoha,an7589-gpio-sysctl", "syscon",
+				     "simple-mfd";
+			reg = <0x0 0x1fbf0200 0x0 0x100>;
+
+			an7589_pinctrl: pinctrl {
+				compatible = "airoha,an7589-pinctrl";
+				airoha,iomux = <&iomux>;
+
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL_HIGH>;
+
+				gpio-controller;
+				#gpio-cells = <2>;
+
+				interrupt-controller;
+				#interrupt-cells = <2>;
+			};
 		};
 	};
 };

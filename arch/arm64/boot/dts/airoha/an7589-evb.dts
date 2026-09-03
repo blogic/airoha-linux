@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: (GPL-2.0-only OR BSD-2-Clause)
 /dts-v1/;
 
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
+#include <dt-bindings/leds/common.h>
 #include "an7589.dtsi"
 
 / {
@@ -19,4 +22,35 @@
 		device_type = "memory";
 		reg = <0x0 0x80000000 0x0 0x80000000>;
 	};
+
+	gpio-keys {
+		compatible = "gpio-keys";
+
+		button-0 {
+			label = "reset";
+			linux,code = <KEY_RESTART>;
+			gpios = <&an7589_pinctrl 0 GPIO_ACTIVE_LOW>;
+		};
+
+		button-1 {
+			label = "button1";
+			linux,code = <BTN_0>;
+			gpios = <&an7589_pinctrl 1 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led-0 {
+			color = <LED_COLOR_ID_GREEN>;
+			function = LED_FUNCTION_POWER;
+			gpios = <&an7589_pinctrl 3 GPIO_ACTIVE_LOW>;
+			default-state = "on";
+		};
+	};
+};
+
+&an7589_pinctrl {
+	gpio-ranges = <&an7589_pinctrl 0 0 74>;
 };
