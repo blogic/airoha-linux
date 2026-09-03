@@ -20,6 +20,7 @@ properties:
       - enum:
           - airoha,en7581-chip-scu
           - airoha,an7583-chip-scu
+          - airoha,an7589-chip-scu
       - const: syscon
 
   reg:
