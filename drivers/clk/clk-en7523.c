@@ -818,6 +818,18 @@ static int en7523_reset_deassert(struct reset_controller_dev *rcdev,
 	return en7523_reset_update(rcdev, id, false);
 }
 
+static int en7523_reset_reset(struct reset_controller_dev *rcdev,
+			      unsigned long id)
+{
+	int ret;
+
+	ret = en7523_reset_assert(rcdev, id);
+	if (ret)
+		return ret;
+
+	return en7523_reset_deassert(rcdev, id);
+}
+
 static int en7523_reset_status(struct reset_controller_dev *rcdev,
 			       unsigned long id)
 {
@@ -847,6 +859,7 @@ static int en7523_reset_xlate(struct reset_controller_dev *rcdev,
 }
 
 static const struct reset_control_ops en7581_reset_ops = {
+	.reset = en7523_reset_reset,
 	.assert = en7523_reset_assert,
 	.deassert = en7523_reset_deassert,
 	.status = en7523_reset_status,
