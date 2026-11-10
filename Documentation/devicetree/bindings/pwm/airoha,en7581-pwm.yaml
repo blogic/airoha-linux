@@ -14,7 +14,9 @@ allOf:
 
 properties:
   compatible:
-    const: airoha,en7581-pwm
+    enum:
+      - airoha,en7581-pwm
+      - airoha,an7589-pwm
 
   "#pwm-cells":
     const: 3
