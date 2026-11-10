@@ -11,7 +11,7 @@ maintainers:
 
 description:
   Airoha AN7589 SoC GPIO system controller which provides a register map
-  for controlling the GPIO and pins of the SoC.
+  for controlling the GPIO, pins and PWM of the SoC.
 
 properties:
   compatible:
@@ -28,6 +28,12 @@ properties:
     $ref: /schemas/pinctrl/airoha,an7589-pinctrl.yaml
     description:
       Child node definition for AN7589 Pin controller
+
+  pwm:
+    type: object
+    $ref: /schemas/pwm/airoha,en7581-pwm.yaml
+    description:
+      Child node definition for AN7589 PWM controller
 
 required:
   - compatible
@@ -62,5 +68,11 @@ examples:
             groups = "emmc";
           };
         };
+      };
+
+      pwm {
+        compatible = "airoha,an7589-pwm";
+
+        #pwm-cells = <3>;
       };
     };
