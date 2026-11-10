@@ -90,7 +90,33 @@
 &mdio0 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&mdio0_pins>;
+	#address-cells = <1>;
+	#size-cells = <0>;
 	status = "okay";
+
+	ethernet-phy@19 {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0x19>;
+		reset-gpios = <&an7589_pinctrl 26 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <200000>;
+		reset-deassert-us = <350000>;
+	};
+
+	ethernet-phy@1b {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0x1b>;
+		reset-gpios = <&an7589_pinctrl 28 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <200000>;
+		reset-deassert-us = <350000>;
+	};
+
+	ethernet-phy@1d {
+		compatible = "ethernet-phy-ieee802.3-c45";
+		reg = <0x1d>;
+		reset-gpios = <&an7589_pinctrl 43 GPIO_ACTIVE_LOW>;
+		reset-assert-us = <200000>;
+		reset-deassert-us = <350000>;
+	};
 };
 
 &snfi {
