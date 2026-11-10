@@ -11,7 +11,7 @@ maintainers:
 
 description:
   Airoha AN7589 SoC GPIO system controller which provides a register map
-  for controlling the GPIO and pins of the SoC.
+  for controlling the GPIO, pins and PWM of the SoC.
 
 properties:
   compatible:
@@ -29,6 +29,9 @@ properties:
     description:
       Child node definition for AN7589 Pin controller
 
+  "#pwm-cells":
+    const: 3
+
 required:
   - compatible
   - reg
@@ -42,6 +45,7 @@ examples:
     system-controller@1fbf0200 {
       compatible = "airoha,an7589-gpio-sysctl", "syscon", "simple-mfd";
       reg = <0x1fbf0200 0x100>;
+      #pwm-cells = <3>;
 
       pinctrl {
         compatible = "airoha,an7589-pinctrl";
