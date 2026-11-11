@@ -65,6 +65,7 @@ struct mtk_i2c {
 	u32 clk_div;
 	u32 flags;
 	struct clk *clk;
+	struct reset_control *rst;
 };
 
 static int mtk_i2c_wait_idle(struct mtk_i2c *i2c)
@@ -85,7 +86,9 @@ static void mtk_i2c_reset(struct mtk_i2c *i2c)
 {
 	int ret;
 
-	ret = device_reset(i2c->adap.dev.parent);
+	ret = reset_control_assert(i2c->rst);
+	if (!ret)
+		ret = reset_control_deassert(i2c->rst);
 	if (ret)
 		dev_err(i2c->dev, "I2C reset failed!\n");
 
@@ -287,6 +290,11 @@ static int mtk_i2c_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "Failed to enable clock\n");
 		return PTR_ERR(i2c->clk);
 	}
+
+	i2c->rst = devm_reset_control_get_optional_exclusive(&pdev->dev, NULL);
+	if (IS_ERR(i2c->rst))
+		return dev_err_probe(&pdev->dev, PTR_ERR(i2c->rst),
+				     "Failed to get reset\n");
 
 	i2c->dev = &pdev->dev;
 
