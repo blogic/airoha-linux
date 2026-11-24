@@ -32,6 +32,17 @@ config MFD_ADP5585
 	  the core APIs _only_, you have to select individual components like
 	  the GPIO and PWM functions under the corresponding menus.
 
+config MFD_AIROHA_GPIO_SYSCTL
+	tristate "Airoha GPIO system controller"
+	select MFD_CORE
+	depends on ARCH_AIROHA || COMPILE_TEST
+	depends on OF
+	help
+	  Say yes here to add support for the GPIO system controller of the
+	  Airoha AN7589 SoC. The block holds the pin controller and the PWM
+	  controller. This driver registers the PWM controller, you have to
+	  select the PWM driver under the corresponding menu.
+
 config MFD_ALTERA_A10SR
 	bool "Altera Arria10 DevKit System Resource chip"
 	depends on ARCH_INTEL_SOCFPGA && SPI_MASTER=y && OF
